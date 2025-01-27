@@ -1,11 +1,11 @@
 const express = require('express')
 require('dotenv').config();
 const app = express();
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const cors = require('cors')
 const bodyParser = require('body-parser')
 const bcrypt = require('bcrypt');
-// const jwt = require('jsonwebtoken');
+const jwt = require('jsonwebtoken');
 
 
 
@@ -49,6 +49,56 @@ async function run() {
 
     
 
+    // create user
+    const createUser = async(username, password) =>{
+      const hashedPassword =await bcrypt.hash(password, 10) 
+      await userCollection.insertOne({username, password:hashedPassword})
+   }
+   // create menu item
+   const menuItem = async(name, category, price, availability = true) =>{
+      await menuCollection.insertOne(name, category, price, availability)
+   }
+   // create order item
+   const orderItem = async(userId, items, totalAmount, status = "Pending") =>{
+      await orderCollection.insertOne({
+       userId, 
+       items, 
+       totalAmount, 
+       status,
+       createAt:new Date(),
+      })
+   }
+
+
+   // Registr
+   app.post('/register', async(req, res) =>{
+       const {username, password} = req.body
+       if(!username || !password) return res.status(400).send('Fields are required')
+           const userExist = await userCollection.findOne({username})
+       if(userExist) return res.status(400).send('User already exists');
+
+       await createUser(username, password)
+       return res.status(201).send('User register successfully')
+   })
+
+   // Login
+   app.post('/login', async(req, res) =>{
+       const {username, password} = req.body
+           const user = await userCollection.findOne({username})
+       if(!user || !(await bcrypt.compare(password, user.password))){
+           return res.status(401).send('Invelids credentials');
+       }
+
+       const token = jwt.sign({id:user._id, username:user.username}, process.env.ACCESS_TOKEN_SECRET,{
+           expiresIn: '365d'
+      })
+      res.send({ token })
+
+   })
+
+
+
+
 
 
 
@@ -57,7 +107,7 @@ async function run() {
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
     // Ensures that the client will close when you finish/error
-    await client.close();
+    // await client.close();
   }
 }
 run().catch(console.dir);
