@@ -3,6 +3,8 @@ require('dotenv').config();
 const app = express();
 const { MongoClient, ServerApiVersion } = require('mongodb');
 const cors = require('cors')
+const bodyParser = require('body-parser')
+const bcrypt = require('bcrypt');
 // const jwt = require('jsonwebtoken');
 
 
@@ -17,6 +19,7 @@ const corsOptions = {
 }
 app.use(cors(corsOptions))
 app.use(express.json())
+app.use(bodyParser.json())
 
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.xwmcx9f.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
@@ -30,10 +33,25 @@ const client = new MongoClient(uri, {
   }
 });
 
+
+
+
 async function run() {
   try {
+    
+    
     // Connect the client to the server	(optional starting in v4.7)
-    await client.connect();
+    // await client.connect();
+    const userCollection = client.db('CMFFoodCorner').collection('users')
+    const menuCollection = client.db('CMFFoodCorner').collection('menus')
+    const orderCollection = client.db('CMFFoodCorner').collection('orders')
+
+
+    
+
+
+
+
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
